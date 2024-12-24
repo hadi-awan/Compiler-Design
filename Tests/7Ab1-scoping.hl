@@ -1,0 +1,21 @@
+// Test type of scoping implemented
+var i;
+i = 1;
+
+function testscope()
+	if i==1 then
+		println "Static scoping implemented.";
+	elif i==2 then
+		println "Dynamic scoping implemented.";
+  else
+    println "Not sure what scoping was implemented.";
+	fi;
+end;
+
+function  changei()
+	var i;
+	i = 2;
+	testscope();
+end;
+
+changei();

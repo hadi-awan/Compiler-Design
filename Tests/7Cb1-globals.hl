@@ -1,0 +1,20 @@
+// Test Global variable declarations and initializations
+var a, B, #c;
+a;
+B;
+
+// Test assignments
+a = 10;
+a;
+B = {1,2,3,4,5};
+B;
+
+// Test assignment and use of Boolean identifiers
+#c = #1;
+if #c then println "#c is true"; else println "#c is false"; fi;
+
+// Test retrieval and use of Number identifiers
+var d, e;
+d = -2; 
+e = (a+d)*a/d;
+println "e is: ",e;

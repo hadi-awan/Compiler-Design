@@ -1,0 +1,68 @@
+// Test that routines access variables properly when language is statically scoped
+// This is done via variations on the factorial function, which are NOT good ways 
+// to code the factorial faction.  
+// These functions have been designed to be convoluted on purpose in order to 
+// provide an opportunity to test a complicated static scoping structure.
+
+var result;
+result = 0;
+
+// fact(n) handles all possible integer values for n
+function fact( n )
+	var result ;
+	result = 1;
+ 
+  // fact1 calculates factorials of positive integers
+  function fact1( n )
+    
+    // fact2(n) is called when n is even
+    function fact2( n )
+      if (n == 0) then
+        return result;
+      else
+        result = result * n * (n-1);
+        return fact2(n-2);
+      fi;
+      end;
+
+    // fact1(n) is called when n is odd
+    function fact1( n )
+      var result ;
+      result = n;
+      return fact2(n-1);
+      end;
+      
+    if (n/2*2 != n)  then
+      return fact1(n);
+    else
+      return fact2(n);
+    fi;
+    end;
+    
+  // The remainder of fact handles negative integers
+  // Factorial is not defined for these integers,
+  // So we will return 0;
+  if (n < 0) then
+    return 0;
+  elif (n <= 1) then
+    return result;
+  else
+    return fact1(n);
+  fi;
+  end;
+  
+
+fact(0);
+fact(1);
+fact(2);
+println "This program always calculates fact(n) correctly when n is even.";
+println "When n is odd, fact(n) is correct if dynamic scoping is implemented,";
+println "but with static scoping fact(n-1) is returned instead.";
+println "fact(9) should be 362880 and your program calculated ",fact(9),".";
+if fact(9) == 362880 then
+  println "Therefore dynamic scoping was properly implemented.";
+elif fact(9) == 40320 then
+  println "Therefore static scoping was properly implemented.";
+else
+  println "It looks like scoping was not properly implemented at all.";
+fi;

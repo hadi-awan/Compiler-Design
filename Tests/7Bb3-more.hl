@@ -1,0 +1,51 @@
+// Test functions with different types of parameters and return values
+
+function sumAll(A)
+  var i,sum;
+  for i in A do
+    sum = sum+i;
+    end;
+  return sum;
+  end;
+
+sumAll([1,10]);
+
+function MaxSingleton(A)
+  var i,max;
+  for i in A do
+    if i>max then max = i; fi;
+    end;
+  return {max};
+  end;
+
+MaxSingleton([1,10]*[5,15]);
+
+function PickParity(A,#even)
+  var i,NewSet;
+  for i in A do
+    if #even then
+      if i%2==0 then NewSet = NewSet + {i}; fi;
+    else
+      if i%2==1 then NewSet = NewSet + {i}; fi;
+    fi;      
+    end;
+  return NewSet;
+  end;
+
+println "The set of the even elements of [1,15] is: ",PickParity([1,15],#1);
+println "The set of the odd elements of [1,15] is: ",PickParity([1,15],#0);  
+  
+
+function printParity(A)
+  function #isSumEven(A)
+    return sumAll(A)%2 == 0;
+    end;
+  if #isSumEven(A) then
+    println "The sum of all the elements of ", A, " is even.";
+  else     
+    println "The sum of all the elements of ", A, " is odd.";
+  fi;
+  end;
+
+printParity([1,10]);
+printParity({1,3,5,7,9,11});

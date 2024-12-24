@@ -1,0 +1,8 @@
+./t 7Cb1-globals
+./t 7Cb2-while
+./t 7Bb1-for
+./t 7Bb2-fncalls
+./t 7Bb3-more
+./t 7Ab1-scoping
+./t 7Ab2-static
+./t 7Ab4-more

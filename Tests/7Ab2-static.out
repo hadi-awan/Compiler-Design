@@ -1,0 +1,8 @@
+1
+1
+2
+This program always calculates fact(n) correctly when n is even.
+When n is odd, fact(n) is correct if dynamic scoping is implemented,
+but with static scoping fact(n-1) is returned instead.
+fact(9) should be 362880 and your program calculated 40320.
+Therefore static scoping was properly implemented.

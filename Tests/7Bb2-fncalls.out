@@ -1,0 +1,7 @@
+call f() and return 0
+0
+Global i=0
+call g(i=10) and return i=10
+Global i=0 should still be 0
+call h(1,10), call h(2,9), call h(3,8), call h(4,7), call h(5,6), call h(6,5),  and return 6
+call a(1,20), call a(3,19), call a(5,18), call a(7,17), call a(9,16), call a(11,15), call a(13,14), call a(15,13),  and return 15

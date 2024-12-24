@@ -1,0 +1,423 @@
+options {
+  IGNORE_CASE=false;
+  MULTI=true;	// This will generate one AST class for each non-suppressed non-terminal
+  JJTREE_OUTPUT_DIRECTORY="AST";  // This will put all AST classes in the AST directory
+  VISITOR=true;
+  VISITOR_EXCEPTION="Exception";
+}
+
+PARSER_BEGIN(HL)
+
+public class HL {
+}
+
+PARSER_END(HL)
+
+TOKEN_MGR_DECLS : 
+{
+}
+
+SKIP : {
+  " "     
+  | "\t"    
+  | "\n"    
+  | "\r"    
+  }
+
+TOKEN : 
+{
+	< LESS:	"<">
+|	< LESSEQ:	"<=">
+|	< GREATER:	">">
+|	< GREATEQ:	">=">
+|	< EQUAL:	"==">
+| < NOTEQ: "!=">
+|	< PLUS:	"+">
+|	< MINUS:	"-">
+|	< TIMES:	"*">
+|	< DIV:	"/">
+|	< MOD:	"%">
+| < AND:	"&">
+| < VBAR:	"|">
+| < NOT:	"!">
+|	< ASSIGN:	"=">
+|	< LROUND:	"(">
+|	< LCURLY:	"{">
+|	< LSQUARE:	"[">
+|	< RROUND:	")">
+|	< RCURLY:	"}">
+|	< RSQUARE:	"]">
+|	< COMMA:	",">
+|	< SEMICOL:	";">
+|	< TRUE:	"#1">
+|	< FALSE:	"#0">
+}
+
+TOKEN [IGNORE_CASE]:
+{
+	< DO:"DO">
+|	< ELIF:"ELIF">
+|	< ELSE:"ELSE">
+|	< END:"END">
+|	< FI:"FI">
+|	< FOR:"FOR">
+|	< FUNCTION:"FUNCTION">
+|	< IF:"IF">
+| < IN:"IN">
+| < ISIN:	"=IN">
+| < NOTIN:	"!IN">
+|	< PRINT:"PRINT">
+|	< PRINTLN:"PRINTLN">
+|	< RETURN:"RETURN">
+| < THEN:"THEN">
+|	< VAR:"VAR">
+|	< WHILE:"WHILE">
+}
+
+TOKEN : 
+{
+	< #DIGIT:	["0"-"9"]>
+|	< #LOWER:	["a"-"z"]>
+|	< #UPPER:	["A"-"Z"]>
+|	< #LETTER:	["a"-"z","A"-"Z"]>
+|	< NUMBER:	(<DIGIT>)+ >
+|	< IDNUM:	<LOWER>(<LETTER>|<DIGIT>)* >
+|	< IDSET:	<UPPER>(<LETTER>|<DIGIT>)* >
+|	< IDBOOL:	"#" <LETTER>(<LETTER>|<DIGIT>)* >
+| < STRING: "\"" (~["\""])* "\"" >
+}
+
+// ----------------------  COMMENTS     ----------------------------
+
+SPECIAL_TOKEN : {
+        <COMMENT_SINGLE: "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+    }
+
+//==================================================================
+//                         P A R S E R
+//==================================================================
+
+//------------------------    STATEMENTS, BODIES AND CLAUSES -----------------------------------
+
+// ------------------------------- BEGINNING -----------------------------------
+
+SimpleNode start	() #void :
+{}
+{  S()  { return (SimpleNode) (jjtree.popNode()); }
+| < EOF > {throw new ParseException("End of File.");}
+}
+
+
+void S() throws ParseException	#void	 :
+{}
+{	statement_LL1() ";"
+| LOOKAHEAD(identifier() "=") assign_stat() ";" 
+| expression() ";"
+}
+
+//------------------------    STATEMENTS, BODIES AND CLAUSES -----------------------------------
+
+// These are all the statements which can be differentiated from each other 
+// with a single lookahead
+
+void statement_LL1()		#void :
+{}
+{	var_decl()
+| fn_decl()
+| return_stat()
+| print_stat()
+| println_stat()
+| if_stat()
+| for_stat()
+| while_stat()
+}
+
+void statement()	#void :
+{}
+{	statement_LL1()
+| LOOKAHEAD(2) fn_call()
+| assign_stat()
+}
+
+void body()		 :
+{}
+{	(statement() ";")*
+}
+
+void clause()		 :
+{}
+{	(statement() ";")+
+}
+
+//---------------------------   DECLARATIONS ------------------------------------------------
+
+void var_decl()	#void :
+{}
+{	<VAR> var_list()
+}
+
+void var_list()	#void :
+{}
+{	(identifier() ("," identifier())*) #var_decl
+}
+
+
+void fn_decl()		 :
+{}
+{	<FUNCTION> identifier() "(" ident_list() ")" body() <END>
+}
+
+void ident_list() :
+{}
+{	identifier() ("," identifier())*
+| {}
+}
+
+void identifier()	 #void:
+{}
+{	idnum()
+| idset()
+| idbool()
+}
+
+
+//---------------------------   FUNCTION CALLS AND RETURNS ----------------------------------
+// parameter and return values can be numbers, sets, or booleans
+
+void fn_call()		 :
+{}
+{	idnum() "(" value_list() ")"
+|	idset() "(" value_list() ")"
+}
+
+void boolean_call()		 :
+{}
+{	idbool() "(" value_list() ")"
+}
+
+void value_list()	 :
+{}
+{	value() ("," value())*
+| {}
+}
+
+void return_stat()	 #Return:
+{}
+{	<RETURN> value()
+}
+
+void value()	#void :
+{}
+{	LOOKAHEAD(condition()) condition()
+| expression() 
+}
+
+//---------------------------   MISCELLANEOUS STATEMENTS ----------------------------------
+
+void assign_stat() #Assign:
+{}
+{ idnum() "=" expression()
+| idset() "=" expression()
+| idbool() "=" condition()
+}
+
+void print_stat()  	 #Print:
+{}
+{ 	<PRINT> print_list()
+}
+
+void println_stat()  	 #Println:
+{}
+{ 	<PRINTLN> println_list()
+}
+
+void println_list() #void:
+{}
+{ 	print_list()
+| {} #print_list
+}
+
+void print_list()	 :
+{}
+{	(value() | string()) ("," (value() | string()))*
+}
+
+//---------------------------   IF AND LOOP STATEMENTS  ----------------------------------
+
+void if_stat() #If:
+{}
+{	<IF> condition() <THEN> clause() else_clause() <FI>
+}
+
+void else_clause	() #void:
+{}
+{	 (<ELIF> condition() <THEN> clause() else_clause()) #If
+|  <ELSE> clause()
+|  {} #NULL
+}
+
+void for_stat()	 #For:
+{}
+{	<FOR> idnum() <IN> exp_list() <DO> body() <END>
+}
+
+void exp_list()	 :
+{}
+{	expression() ("," expression())*
+}
+
+void while_stat()	 #While:
+{}
+{	<WHILE> condition() <DO> body() <END>
+}
+
+//---------------------------   CONDITIONS ---------------------------------------------------
+// Conditions will evaluate to Boolean value True or False
+
+void condition() #void:
+{}
+{	(and_clause() (<"|"> and_clause())*) #or(>1)
+}
+
+void and_clause() #void:
+{}
+{	(not_clause() (<"&"> not_clause())*) #and(>1)
+}
+
+void not_clause()	#void :
+{}
+{	"!" not_clause() #not
+|	LOOKAHEAD(expression() comparator()) comparison() 
+| "(" condition() ")"
+| LOOKAHEAD(2) boolean_call()
+|	idbool()
+| <TRUE>  #TRUE
+| <FALSE>  #FALSE
+}
+
+void comparison()	 :
+{}
+{	expression() comparator() expression()
+}
+
+void comparator()	 #void :
+{}
+{	<LESS>    #LESS
+| <LESSEQ>  #LESSEQ 
+| <GREATER>    #GREATER
+| <GREATEQ>  #GREATEQ
+| <EQUAL> #EQUAL
+| <NOTEQ> #NOTEQ
+| <ISIN>  #ISIN
+| <NOTIN>  #NOTIN
+}
+
+//---------------------------   EXPRESSIONS ------------------------------------------------
+// Expressions will evaluate to sets or numbers
+
+void expression()	#void	 :
+{}
+{	("+" product() (summand())*) #sum(>1)
+|	(neg() (summand())*) #sum
+|	(product() (summand())*)  #sum(>1)
+}
+
+void neg() :
+{}
+{	"-" product() 
+}
+
+ void summand() #void :
+{}
+{	"+" product() #pos
+|	"-" product() #neg
+}
+ 
+void product() #void :
+{}
+{	term() moreterms()
+}
+
+void moreterms() #void :
+{}
+{("*" term()) #mul(2) moreterms()
+|("/" term()) #div(2) moreterms()
+|("%" term()) #mod(2) moreterms()
+| {}
+}
+
+void term()	#void	 :
+{}
+{	"(" expression() ")"
+| ("|" expression() "|") #Absolute_value
+|	LOOKAHEAD(2) fn_call()
+| simple_term()
+}
+
+void simple_term()	#void :
+{}
+{	idnum()
+| idset()
+| number()
+| interval()
+|	"{" set_defs() "}"
+}
+
+void interval()	 :
+{}
+{	"[" expression() "," expression() "]"
+}
+
+void set_defs()	#void :
+{}
+{ LOOKAHEAD(2) set_former()
+| set()
+}
+
+void set_former()	 :
+{}
+{	idnum() domain() "|" condition()
+}
+
+void domain() #void :
+{}
+{	<IN> expression()
+|  {} #NULL
+}
+
+void set() :
+{}
+{	expression() ("," expression())*
+| {} 
+}
+
+// Nodified Tokens
+
+void idnum () #identifier :
+{Token t;}
+{  (t=<IDNUM> typenum()) {jjtThis.jjtSetValue(t.getValue());}
+}
+void typenum (): {} {{}}
+
+void idset ()  #identifier  :
+{Token t;}
+{  (t=<IDSET> typeset())  {jjtThis.jjtSetValue(t.getValue());}
+}
+void typeset (): {} {{}}
+
+void idbool ()  #identifier  :
+{Token t;}
+{  (t=<IDBOOL> typebool())  {jjtThis.jjtSetValue(t.getValue());}
+}
+void typebool (): {} {{}}
+
+void number () :
+{Token t;}
+{  t=<NUMBER>  {jjtThis.jjtSetValue(t.getValue());}
+}
+
+void string () :
+{Token t;}
+{  t=<STRING>  {jjtThis.jjtSetValue(t.getValue());}
+}
+

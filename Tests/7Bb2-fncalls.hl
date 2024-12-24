@@ -1,0 +1,41 @@
+// Test functionction definitions and calls
+// no parameters, no locals, no recursion
+function f() println "call f() and return 0"; return 0; end;
+f();
+
+// add parameters
+var i;
+i = 0;
+println "Global i=",i;
+function g(i) print "call g(i=",i,") and return i="; return i; end;
+g(10);
+println "Global i=",i," should still be 0";
+
+// add recursion
+function h( i,  n)
+  print "call h(",i,",",n,"), "; 
+  if i<n then
+    return h(i+1,n-1);
+  else
+    return i;
+  fi;   
+end;
+i=h(1,10);
+println " and return ",i;
+
+// add local variables
+function a( i,  n)
+  var j,k;
+  print "call a(",i,",",n,"), "; 
+  if i<n then
+    j = i+2;
+    k = n-1;
+    return a(j,k);
+  else
+    return i;
+  fi;   
+end;
+i = a(1,20);
+println " and return ",i;
+
+

@@ -1,0 +1,8 @@
+// test while statement
+var i;
+i = 100;
+while (i>=0) do
+	print "i is now ";
+	println i;
+  i = i-7;
+	end;
